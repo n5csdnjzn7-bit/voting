@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Results</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #f1f5f9; color: #1e293b; padding: 20px; }
+        nav { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; }
+        nav a:hover { text-decoration: underline; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; }
+        .result-item { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .bar-container { background: #e2e8f0; height: 20px; border-radius: 10px; margin-top: 8px; overflow: hidden; }
+        .bar { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease-in-out; }
+        .votes-count { font-weight: bold; color: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="index.html">Voting</a>
+            <a href="results.html">Results</a>
+            <a href="config.html">Admin Config</a>
+        </nav>
+
+        <h1>Live Voting Results</h1>
+        <div id="results-list">
+            <!-- Results will load here -->
+        </div>
+    </div>
+
+    <script>
+        function renderResults() {
+            const stored = localStorage.getItem('nominees');
+            const nominees = stored ? JSON.parse(stored) : [];
+            const container = document.getElementById('results-list');
+            container.innerHTML = '';
+
+            if (nominees.length === 0) {
+                container.innerHTML = '<p>No data to display.</p>';
+                return;
+            }
+
+            // Calculate total votes
+            const totalVotes = nominees.reduce((sum, n) => sum + n.votes, 0);
+
+            nominees.forEach(n => {
+                const percentage = totalVotes > 0 ? Math.round((n.votes / totalVotes) * 100) : 0;
+                
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>${n.name}</strong></span>
+                        <span class="votes-count">${n.votes} votes (${percentage}%)</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Check for updates in real-time (every 2 seconds)
+        window.onload = () => {
+            renderResults();
+            setInterval(renderResults, 2000);
+        };
+    </script>
+</body>
+</html>
