@@ -9,13 +9,10 @@
         body { background: #f1f5f9; color: #1e293b; padding: 20px; }
         nav { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; }
         nav a { color: white; text-decoration: none; font-weight: bold; }
-        nav a:hover { text-decoration: underline; }
         .container { max-width: 800px; margin: 0 auto; }
-        h1 { margin-bottom: 20px; }
         .nominee-list { display: grid; gap: 15px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         button { background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #1d4ed8; }
     </style>
 </head>
 <body>
@@ -25,66 +22,56 @@
             <a href="results.html">Results</a>
             <a href="config.html">Admin Config</a>
         </nav>
-
         <h1>Cast Your Vote</h1>
-        <div class="nominee-list" id="voting-list">
-            <!-- Nominees will load here -->
-        </div>
+        <div class="nominee-list" id="voting-list">Loading nominees...</div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script>
-        // Initial default nominees if none exist in localStorage
-        const defaultNominees = [
-            { id: 1, name: "Alice Smith", votes: 0 },
-            { id: 2, name: "Bob Jones", votes: 0 },
-            { id: 3, name: "Charlie Brown", votes: 0 }
-        ];
+        // REPLACE THIS WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+          apiKey: "AIzaSyCROMbu70itT88RPDT8S7gAAOUKNkgwVas",
+          authDomain: "voting-app-fcf7c.firebaseapp.com",
+          databaseURL: "https://voting-app-fcf7c-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "voting-app-fcf7c",
+          storageBucket: "voting-app-fcf7c.firebasestorage.app",
+          messagingSenderId: "343602694510",
+          appId: "1:343602694510:web:0d0e205b7363d6adde197f"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        function getNominees() {
-            const stored = localStorage.getItem('nominees');
-            if (!stored) {
-                localStorage.setItem('nominees', JSON.stringify(defaultNominees));
-                return defaultNominees;
-            }
-            return JSON.parse(stored);
-        }
-
-        function saveNominees(nominees) {
-            localStorage.setItem('nominees', JSON.stringify(nominees));
-        }
-
-        function renderVoting() {
-            const nominees = getNominees();
+        // Listen for data across all devices in real-time
+        db.ref('nominees').on('value', (snapshot) => {
+            const data = snapshot.val();
             const container = document.getElementById('voting-list');
             container.innerHTML = '';
 
-            if (nominees.length === 0) {
-                container.innerHTML = '<p>No nominees configured yet. Go to Admin Config to add some.</p>';
+            if (!data) {
+                container.innerHTML = '<p>No nominees configured yet.</p>';
                 return;
             }
 
-            nominees.forEach(n => {
+            Object.keys(data).forEach(key => {
+                const nominee = data[key];
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <span><strong>${n.name}</strong></span>
-                    <button onclick="vote(${n.id})">Vote</button>
+                    <span><strong>${nominee.name}</strong></span>
+                    <button onclick="vote('${key}', ${nominee.votes || 0})">Vote</button>
                 `;
                 container.appendChild(card);
             });
-        }
+        });
 
-        function vote(id) {
-            const nominees = getNominees();
-            const nominee = nominees.find(n => n.id === id);
-            if (nominee) {
-                nominee.votes += 1;
-                saveNominees(nominees);
-                alert(`Voted for ${nominee.name}! Check the Results page to see updates.`);
-            }
+        function vote(key, currentVotes) {
+            db.ref('nominees/' + key).update({
+                votes: currentVotes + 1
+            }).then(() => {
+                alert("Vote submitted successfully!");
+            });
         }
-
-        window.onload = renderVoting;
     </script>
 </body>
 </html>
