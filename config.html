@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Panel</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #f1f5f9; color: #1e293b; padding: 20px; }
+        nav { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; }
+        nav a:hover { text-decoration: underline; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; }
+        .form-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        input[type="text"] { width: 70%; padding: 10px; margin-right: 10px; border: 1px solid #cbd5e1; border-radius: 5px; }
+        button { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        button.delete-btn { background: #ef4444; }
+        button.delete-btn:hover { background: #dc2626; }
+        button.reset-btn { background: #64748b; margin-top: 10px; }
+        .config-list { display: grid; gap: 10px; }
+        .config-item { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="index.html">Voting</a>
+            <a href="results.html">Results</a>
+            <a href="config.html">Admin Config</a>
+        </nav>
+
+        <h1>Manage Nominees</h1>
+
+        <div class="form-section">
+            <h2>Add New Nominee</h2>
+            <div style="display: flex; margin-top: 10px;">
+                <input type="text" id="nominee-name-input" placeholder="Enter nominee name...">
+                <button onclick="addNominee()">Add</button>
+            </div>
+        </div>
+
+        <h2>Current Nominees</h2>
+        <div class="config-list" id="config-list" style="margin-top: 15px;">
+            <!-- Manage list loads here -->
+        </div>
+
+        <button class="reset-btn" onclick="resetVotes()">Reset All Votes to Zero</button>
+    </div>
+
+    <script>
+        function getNominees() {
+            const stored = localStorage.getItem('nominees');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function saveNominees(nominees) {
+            localStorage.setItem('nominees', JSON.stringify(nominees));
+            renderConfig();
+        }
+
+        function renderConfig() {
+            const nominees = getNominees();
+            const container = document.getElementById('config-list');
+            container.innerHTML = '';
+
+            if (nominees.length === 0) {
+                container.innerHTML = '<p>No nominees listed.</p>';
+                return;
+            }
+
+            nominees.forEach(n => {
+                const div = document.createElement('div');
+                div.className = 'config-item';
+                div.innerHTML = `
+                    <span><strong>${n.name}</strong> (Votes: ${n.votes})</span>
+                    <button class="delete-btn" onclick="deleteNominee(${n.id})">Remove</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addNominee() {
+            const input = document.getElementById('nominee-name-input');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const nominees = getNominees();
+            const newNominee = {
+                id: Date.now(), // Unique ID
+                name: name,
+                votes: 0
+            };
+
+            nominees.push(newNominee);
+            saveNominees(nominees);
+            input.value = '';
+        }
+
+        function deleteNominee(id) {
+            let nominees = getNominees();
+            nominees = nominees.filter(n => n.id !== id);
+            saveNominees(nominees);
+        }
+
+        function resetVotes() {
+            if (confirm("Are you sure you want to clear all current votes?")) {
+                const nominees = getNominees();
+                nominees.forEach(n => n.votes = 0);
+                saveNominees(nominees);
+            }
+        }
+
+        window.onload = renderConfig;
+    </script>
+</body>
+</html>
