@@ -13,7 +13,15 @@
         .form-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input[type="text"] { width: 70%; padding: 10px; margin-right: 10px; border: 1px solid #cbd5e1; border-radius: 5px; }
         button { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        .btn-group { display: flex; gap: 8px; }
+        button.edit-btn { background: #f59e0b; }
+        button.edit-btn:hover { background: #d97706; }
+        button.save-btn { background: #10b981; }
+        button.save-btn:hover { background: #059669; }
         button.delete-btn { background: #ef4444; }
+        button.delete-btn:hover { background: #dc2626; }
+        .edit-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 1rem; width: 60%; }
     </style>
 </head>
 <body>
@@ -21,19 +29,18 @@
         <nav>
             <a href="index.html">Voting</a>
             <a href="results.html">Results</a>
-            <a href="config.html">Admin Config</a>
         </nav>
         <h1>Configuration</h1>
 
         <div class="form-section">
-            <h2>Add New Nominee</h2>
+            <h2>Add</h2>
             <div style="display: flex; margin-top: 10px;">
                 <input type="text" id="nominee-name-input" placeholder="Enter nominee name...">
                 <button onclick="addNominee()">Add</button>
             </div>
         </div>
 
-        <h2>Current Vote</h2>
+        <h2>Current</h2>
         <div id="config-list" style="margin-top: 15px; display: grid; gap: 10px;">Loading...</div>
     </div>
 
@@ -67,9 +74,17 @@
                 const nominee = data[key];
                 const div = document.createElement('div');
                 div.style = "background: white; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;";
+                
                 div.innerHTML = `
-                    <span><strong>${nominee.name}</strong> (Votes: ${nominee.votes || 0})</span>
-                    <button class="delete-btn" onclick="deleteNominee('${key}')">Remove</button>
+                    <div id="display-container-${key}" style="flex-grow: 1; display: flex; align-items: center; justify-content: space-between; margin-right: 20px;">
+                        <span id="name-span-${key}"><strong>${nominee.name}</strong> (Votes: ${nominee.votes || 0})</span>
+                        <input type="text" id="edit-input-${key}" class="edit-input" value="${nominee.name}" style="display: none;">
+                    </div>
+                    <div class="btn-group">
+                        <button id="edit-btn-${key}" class="edit-btn" onclick="toggleEdit('${key}')">Edit</button>
+                        <button id="save-btn-${key}" class="save-btn" onclick="saveEdit('${key}')" style="display: none;">Save</button>
+                        <button class="delete-btn" onclick="deleteNominee('${key}')">Remove</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
@@ -88,7 +103,31 @@
         }
 
         function deleteNominee(key) {
-            db.ref('nominees/' + key).remove();
+            if (confirm("Are you sure you want to remove this nominee?")) {
+                db.ref('nominees/' + key).remove();
+            }
+        }
+
+        // Toggle UI into editing mode
+        function toggleEdit(key) {
+            document.getElementById(`name-span-${key}`).style.display = 'none';
+            document.getElementById(`edit-input-${key}`).style.display = 'block';
+            
+            document.getElementById(`edit-btn-${key}`).style.display = 'none';
+            document.getElementById(`save-btn-${key}`).style.display = 'block';
+        }
+
+        // Push edited name to Firebase
+        function saveEdit(key) {
+            const newName = document.getElementById(`edit-input-${key}`).value.trim();
+            if (!newName) return;
+
+            db.ref('nominees/' + key).update({
+                name: newName
+            }).then(() => {
+                // UI will auto-refresh via the Firebase on('value') listener
+                console.log("Nominee updated successfully!");
+            });
         }
     </script>
 </body>
