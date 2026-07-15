@@ -21,6 +21,8 @@
         button.save-btn:hover { background: #059669; }
         button.delete-btn { background: #ef4444; }
         button.delete-btn:hover { background: #dc2626; }
+        button.reset-btn { background: #64748b; margin-top: 25px; width: 100%; padding: 12px; }
+        button.reset-btn:hover { background: #475569; }
         .edit-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 1rem; width: 60%; }
     </style>
 </head>
@@ -42,6 +44,8 @@
 
         <h2>Current</h2>
         <div id="config-list" style="margin-top: 15px; display: grid; gap: 10px;">Loading...</div>
+
+        <button class="reset-btn" onclick="resetAllVotes()">Reset All Votes to Zero</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -49,19 +53,22 @@
     <script>
         // REPLACE THIS WITH YOUR FIREBASE CONFIG
         const firebaseConfig = {
-          apiKey: "AIzaSyCROMbu70itT88RPDT8S7gAAOUKNkgwVas",
-          authDomain: "voting-app-fcf7c.firebaseapp.com",
-          databaseURL: "https://voting-app-fcf7c-default-rtdb.asia-southeast1.firebasedatabase.app",
-          projectId: "voting-app-fcf7c",
-          storageBucket: "voting-app-fcf7c.firebasestorage.app",
-          messagingSenderId: "343602694510",
-          appId: "1:343602694510:web:0d0e205b7363d6adde197f"
+          apiKey: "AIzaSyDnj9POraZbvD_MhL42oLPRAFs1BtAJn1M",
+          authDomain: "voting-app---test.firebaseapp.com",
+          projectId: "voting-app---test",
+          storageBucket: "voting-app---test.firebasestorage.app",
+          messagingSenderId: "754281987971",
+          appId: "1:754281987971:web:a95ae3f978937e7c5100b6"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // Keep track of the current raw nominee data for resetting
+        let currentNomineesData = null;
+
         db.ref('nominees').on('value', (snapshot) => {
             const data = snapshot.val();
+            currentNomineesData = data; // Store copy for reset function
             const container = document.getElementById('config-list');
             container.innerHTML = '';
 
@@ -108,7 +115,6 @@
             }
         }
 
-        // Toggle UI into editing mode
         function toggleEdit(key) {
             document.getElementById(`name-span-${key}`).style.display = 'none';
             document.getElementById(`edit-input-${key}`).style.display = 'block';
@@ -117,17 +123,36 @@
             document.getElementById(`save-btn-${key}`).style.display = 'block';
         }
 
-        // Push edited name to Firebase
         function saveEdit(key) {
             const newName = document.getElementById(`edit-input-${key}`).value.trim();
             if (!newName) return;
 
             db.ref('nominees/' + key).update({
                 name: newName
-            }).then(() => {
-                // UI will auto-refresh via the Firebase on('value') listener
-                console.log("Nominee updated successfully!");
             });
+        }
+
+        // Reset all nominee votes globally
+        function resetAllVotes() {
+            if (!currentNomineesData) {
+                alert("No nominees to reset!");
+                return;
+            }
+
+            const confirmation = confirm("Are you sure you want to reset ALL votes to zero? This action cannot be undone.");
+            if (confirmation) {
+                const updates = {};
+                // Prepare an update object to reset votes for every key at once
+                Object.keys(currentNomineesData).forEach(key => {
+                    updates[`/nominees/${key}/votes`] = 0;
+                });
+
+                db.ref().update(updates).then(() => {
+                    alert("All votes have been reset to zero successfully!");
+                }).catch((error) => {
+                    alert("Error resetting votes: " + error.message);
+                });
+            }
         }
     </script>
 </body>
