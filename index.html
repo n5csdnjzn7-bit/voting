@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote for Nominees</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #f1f5f9; color: #1e293b; padding: 20px; }
+        nav { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; }
+        nav a:hover { text-decoration: underline; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; }
+        .nominee-list { display: grid; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        button { background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="index.html">Voting</a>
+            <a href="results.html">Results</a>
+            <a href="config.html">Admin Config</a>
+        </nav>
+
+        <h1>Cast Your Vote</h1>
+        <div class="nominee-list" id="voting-list">
+            <!-- Nominees will load here -->
+        </div>
+    </div>
+
+    <script>
+        // Initial default nominees if none exist in localStorage
+        const defaultNominees = [
+            { id: 1, name: "Alice Smith", votes: 0 },
+            { id: 2, name: "Bob Jones", votes: 0 },
+            { id: 3, name: "Charlie Brown", votes: 0 }
+        ];
+
+        function getNominees() {
+            const stored = localStorage.getItem('nominees');
+            if (!stored) {
+                localStorage.setItem('nominees', JSON.stringify(defaultNominees));
+                return defaultNominees;
+            }
+            return JSON.parse(stored);
+        }
+
+        function saveNominees(nominees) {
+            localStorage.setItem('nominees', JSON.stringify(nominees));
+        }
+
+        function renderVoting() {
+            const nominees = getNominees();
+            const container = document.getElementById('voting-list');
+            container.innerHTML = '';
+
+            if (nominees.length === 0) {
+                container.innerHTML = '<p>No nominees configured yet. Go to Admin Config to add some.</p>';
+                return;
+            }
+
+            nominees.forEach(n => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <span><strong>${n.name}</strong></span>
+                    <button onclick="vote(${n.id})">Vote</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function vote(id) {
+            const nominees = getNominees();
+            const nominee = nominees.find(n => n.id === id);
+            if (nominee) {
+                nominee.votes += 1;
+                saveNominees(nominees);
+                alert(`Voted for ${nominee.name}! Check the Results page to see updates.`);
+            }
+        }
+
+        window.onload = renderVoting;
+    </script>
+</body>
+</html>
